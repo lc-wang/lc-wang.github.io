@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>lc-wang — Full Stack Embedded Engineer</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1720;
+      --card:#0b1116;
+      --accent:#6ee7b7;
+      --muted:#9aa6b2;
+      --panel:#071019;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"IBM Plex Mono", monospace;
+      background:linear-gradient(180deg,var(--bg),#061018 120%);
+      color:#e6eef3;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* LEFT-ALIGN LAYOUT */
+    .wrap{
+      max-width:1200px;
+      margin:36px 0 36px 36px;
+      padding:28px;
+    }
+
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.04);
+      border-radius:10px;
+      padding:22px;
+      box-shadow:0 8px 30px rgba(2,6,23,0.6);
+    }
+    header{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+    .avatar{
+      width:84px;height:84px;border-radius:10px;background:#0b1220;border:1px solid rgba(255,255,255,0.04);
+      display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);
+      font-size:22px;
+    }
+    h1{margin:0;font-size:1.45rem;letter-spacing:0.02em}
+    .role{color:var(--muted);margin-top:6px;font-size:0.95rem}
+    nav{margin-top:14px;border-top:1px solid rgba(255,255,255,0.03);padding-top:12px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{
+      background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);
+      cursor:pointer;font-weight:600;font-size:0.95rem;
+    }
+    .tab.active{background:var(--panel);border-color:rgba(110,231,183,0.14);color:var(--accent)}
+    .panels{margin-top:18px}
+    .panel{display:none}
+    .panel.active{display:block;animation:fade 220ms ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .section-title{font-size:0.98rem;color:var(--accent);margin-bottom:8px}
+    .muted{color:var(--muted);font-size:0.95rem}
+    ul{margin:8px 0 12px 20px;padding:0;color:#d9e9e3}
+    code.kv{background:#071018;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-size:0.92rem}
+    .project{border-left:3px solid rgba(110,231,183,0.12);padding:12px 14px;border-radius:6px;background:rgba(255,255,255,0.01);margin-bottom:12px}
+    a{color:var(--accent)}
+
+    /* Repo panel: sidebar + content */
+    .repo-panel{display:flex;gap:18px;align-items:flex-start}
+    .sidebar{
+      width:320px;
+      min-width:220px;
+      max-width:380px;
+      min-height:300px;
+      padding:10px;
+      border-right:1px solid rgba(255,255,255,0.03);
+      overflow:hidden;
+    }
+    .content{flex:1;padding:10px;min-height:300px;overflow:auto;min-width:0}
+    .folder{margin-bottom:12px}
+    .folder > .folder-title{
+      font-weight:700;color:#cfeee0;cursor:pointer;display:flex;align-items:center;gap:8px;
+      user-select:none;
+    }
+    .folder > .folder-title::before{
+      content:'▸';
+      display:inline-block;
+      width:1em;
+      transform-origin:center;
+      transition: transform 0.15s ease;
+      color:var(--muted);
+    }
+    .folder.open > .folder-title::before{
+      transform: rotate(90deg);
+      color:var(--accent);
+    }
+
+    .file-list{margin-left:8px;margin-top:8px}
+    .subfolder{margin-top:6px}
+    .subfolder-title{
+      font-weight:700;color:#cfeee0;cursor:pointer;display:flex;align-items:center;gap:8px;margin-top:6px;
+      user-select:none;font-size:0.95rem;
+    }
+    .subfolder-title::before{
+      content:'▸';
+      display:inline-block;width:1em;transition:transform 0.15s ease;color:var(--muted);
+    }
+    .subfolder.open > .subfolder-title::before{transform:rotate(90deg);color:var(--accent)}
+
+    .folder .inner-list{display:block}
+    .folder.collapsed .inner-list{display:none}
+    .subfolder .sub-list{display:block}
+    .subfolder.collapsed .sub-list{display:none}
+
+    /* FILE NAME: use ellipsis to avoid expanding sidebar */
+    .file-item{
+      padding:6px 8px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:600;
+      display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width:100%;
+    }
+    .file-item:hover{background:rgba(255,255,255,0.012);color:var(--accent)}
+    .file-item.active{background:linear-gradient(90deg,#062a25,#0a1530);color:var(--accent)}
+    .md-content{background:rgba(255,255,255,0.01);padding:14px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .loader{color:var(--muted);font-size:0.95rem}
+
+    /* Prevent overflow: wrap long words in content; allow code blocks to scroll */
+    .md-content, .md-content * {
+      max-width:100%;
+      box-sizing:border-box;
+      word-break:break-word;
+      overflow-wrap:break-word;
+    }
+    .md-content img{max-width:100%;height:auto;display:block}
+    .md-content code{white-space:pre-wrap;word-break:break-all}
+    .md-content pre{
+      white-space:pre;
+      overflow:auto;
+      max-width:100%;
+      background:#041018;
+      padding:12px;
+      border-radius:6px;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .md-content table{width:100%;overflow:auto;display:block}
+    .md-content p{line-height:1.6}
+
+    /* Sidebar toggle */
+    .toggle-btn{
+      display:inline-block;margin-bottom:10px;padding:6px 10px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;font-weight:600;
+    }
+
+    /* Collapsed sidebar state */
+    .collapsed .sidebar{display:none}
+    .collapsed .content{flex-basis:100%}
+
+    @media(max-width:900px){
+      .wrap{margin:18px auto;padding:14px;max-width:92%}
+      .repo-panel{flex-direction:column}
+      .sidebar{width:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,0.03)}
+    }
+
+    .path-header{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    .path-text{font-weight:700;color:#cfeee0;font-size:0.95rem;word-break:break-all;}
+    .path-actions{margin-left:auto;display:flex;gap:8px}
+    .action-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;border-radius:6px;color:var(--muted);cursor:pointer;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div class="avatar">lc</div>
+        <div>
+          <h1>lc-wang</h1>
+          <div class="role">Full Stack Embedded Engineer — Embedded Linux & BSP</div>
+        </div>
+      </header>
+
+      <nav>
+        <div class="tabs" role="tablist" aria-label="主選單">
+          <button class="tab active" data-target="about">About</button>
+          <button class="tab" data-target="projects">Projects / Notes</button>
+          <button class="tab" data-target="contact">Contact</button>
+        </div>
+      </nav>
+
+      <div class="panels">
+        <section id="about" class="panel active" role="tabpanel">
+          <div class="section-title">Profile</div>
+          <div class="muted">簡短摘要</div>
+          <p style="margin-top:8px">
+            嵌入式與 Android Kernel/BSP 工程師，專注於板子 bring‑up、驅動移植與 Android 系統升級。具 Yocto 與 Ubuntu 系統建置經驗，並擁有 Android framework 移植與維護實務經驗；能從 bootloader、kernel 到 rootfs 完整整合
+          </p>
+
+          <div style="margin-top:10px">
+            <span class="section-title">Core skills</span>
+            <div style="margin-top:6px" class="muted">
+              <code class="kv">Linux Kernel / BSP</code> &nbsp;
+              <code class="kv">Android Framework / Driver Porting</code> &nbsp;
+              <code class="kv">Android OS Upgrade</code> &nbsp;
+              <code class="kv">Yocto / Ubuntu System Build</code>
+            </div>
+          </div>
+        </section>
+
+        <section id="projects" class="panel" role="tabpanel">
+          <div id="repoContainer" class="repo-panel" style="margin-top:14px">
+            <aside class="sidebar">
+              <button id="toggleSidebar" class="toggle-btn">Toggle file list</button>
+              <div class="loader" id="repoLoader">Loading repo index...</div>
+              <div id="repoFolders" style="display:none"></div>
+            </aside>
+
+            <main class="content" id="contentArea">
+              <div id="mdViewer"><div class="muted">選擇左側檔案以檢視內容</div></div>
+            </main>
+          </div>
+        </section>
+
+        <section id="contact" class="panel" role="tabpanel">
+          <div class="section-title">Contact</div>
+          <div class="muted">歡迎技術交流或合作</div>
+          <ul>
+            <li>Email: <a href="mailto:zaq14760@gmail.com">zaq14760@gmail.com</a></li>
+            <li>GitHub: <a href="https://github.com/lc-wang" target="_blank">https://github.com/lc-wang</a></li>
+          </ul>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- marked for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    // Config: use the repo you specified
+    const owner = 'lc-wang';
+    const repo = 'android-kernel-bsp-learning';
+    const topDirs = ['notes','investigation','code','examples'];
+
+    // UI refs
+    const repoLoader = document.getElementById('repoLoader');
+    const repoFolders = document.getElementById('repoFolders');
+    const mdViewer = document.getElementById('mdViewer');
+    const repoContainer = document.getElementById('repoContainer');
+
+    // basic tabs
+    document.querySelectorAll('.tab').forEach(btn=>{
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-target');
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // toggle entire sidebar
+    document.getElementById('toggleSidebar').addEventListener('click', () => {
+      repoContainer.classList.toggle('collapsed');
+      setTimeout(()=>{ if(mdViewer) mdViewer.scrollTop = 0 }, 50);
+    });
+
+    // helpers
+    async function apiGet(url){
+      const res = await fetch(url);
+      if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      return res.json();
+    }
+
+    // get default branch from repo metadata (more reliable)
+    async function getDefaultBranch(){
+      const api = `https://api.github.com/repos/${owner}/${repo}`;
+      const info = await apiGet(api);
+      return info.default_branch || 'main';
+    }
+
+    // list directory contents (with explicit ref)
+    async function listDir(path, ref){
+      const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${ref}`;
+      return await apiGet(api);
+    }
+
+    // fallback: list root directories
+    async function listRootDirs(ref){
+      const api = `https://api.github.com/repos/${owner}/${repo}/contents?ref=${ref}`;
+      const items = await apiGet(api);
+      return items.filter(i=>i.type === 'dir');
+    }
+
+    // build the left-panel tree
+    async function buildTree(){
+      repoLoader.style.display='block';
+      repoFolders.style.display='none';
+      repoFolders.innerHTML = '';
+
+      let branch;
+      try{
+        branch = await getDefaultBranch();
+      }catch(e){
+        repoLoader.textContent = `無法取得 repo 資訊: ${e.message}`;
+        return;
+      }
+
+      repoLoader.textContent = `Using branch: ${branch}`;
+
+      let anyFound = false;
+
+      // try each topDirs
+      for(const d of topDirs){
+        try{
+          const items = await listDir(d, branch);
+          if(!Array.isArray(items) || items.length === 0) continue;
+          anyFound = true;
+          const folderEl = makeFolderElement(d, items, branch, d === 'notes');
+          repoFolders.appendChild(folderEl);
+        }catch(e){
+          // skip if dir not exist
+        }
+      }
+
+      // if none of topDirs exist, fallback to root directories
+      if(!anyFound){
+        try{
+          const rootDirs = await listRootDirs(branch);
+          if(rootDirs.length === 0){
+            repoFolders.innerHTML = '<div class="muted">Repository appears to have no directories to list.</div>';
+            repoLoader.style.display = 'none';
+            repoFolders.style.display = 'block';
+            return;
+          }
+          for(const rd of rootDirs){
+            try{
+              const items = await listDir(rd.path, branch);
+              const folderEl = makeFolderElement(rd.name, items, branch, false);
+              repoFolders.appendChild(folderEl);
+            }catch(e){}
+          }
+        }catch(e){
+          repoFolders.innerHTML = `<div class="muted">Error reading repo: ${e.message}</div>`;
+          repoLoader.style.display = 'none';
+          repoFolders.style.display = 'block';
+          return;
+        }
+      }
+
+      // show UI
+      repoLoader.style.display = 'none';
+      repoFolders.style.display = 'block';
+      attachFolderHandlers();
+    }
+
+    // create folder DOM; if isNotes true, expect subfolders under it
+    function makeFolderElement(folderName, items, branch, isNotes){
+      const folderEl = document.createElement('div');
+      folderEl.className = 'folder open';
+
+      const title = document.createElement('div');
+      title.className = 'folder-title';
+      title.textContent = folderName;
+      folderEl.appendChild(title);
+
+      const innerList = document.createElement('div');
+      innerList.className = 'inner-list file-list';
+
+      if(isNotes){
+        // items are expected to be subfolders (android/bsp/kernel)
+        for(const sub of items){
+          if(sub.type !== 'dir') continue;
+          const subFolder = document.createElement('div');
+          subFolder.className = 'subfolder open';
+
+          const subTitle = document.createElement('div');
+          subTitle.className = 'subfolder-title';
+          subTitle.textContent = sub.name;
+          subFolder.appendChild(subTitle);
+
+          // fetch files under sub
+          (async ()=>{
+            try{
+              const subItems = await listDir(`${folderName}/${sub.name}`, branch);
+              const subList = document.createElement('div');
+              subList.className = 'sub-list';
+              for(const f of subItems){
+                if(f.type !== 'file') continue;
+                const fileEl = makeFileItem(`${folderName}/${sub.name}/${f.name}`, f.download_url);
+                subList.appendChild(fileEl);
+              }
+              subFolder.appendChild(subList);
+            }catch(e){
+              // ignore
+            }
+          })();
+
+          innerList.appendChild(subFolder);
+        }
+      } else {
+        // items may be files or subdirs
+        for(const it of items){
+          if(it.type === 'file'){
+            const fileEl = makeFileItem(`${folderName}/${it.name}`, it.download_url);
+            innerList.appendChild(fileEl);
+          } else if(it.type === 'dir'){
+            const dirFolder = document.createElement('div');
+            dirFolder.className = 'subfolder open';
+            const dirTitle = document.createElement('div');
+            dirTitle.className = 'subfolder-title';
+            dirTitle.textContent = it.name;
+            dirFolder.appendChild(dirTitle);
+            (async ()=>{
+              try{
+                const nested = await listDir(`${folderName}/${it.name}`, branch);
+                const nestedList = document.createElement('div');
+                nestedList.className = 'sub-list';
+                for(const nf of nested){
+                  if(nf.type !== 'file') continue;
+                  const fileEl = makeFileItem(`${folderName}/${it.name}/${nf.name}`, nf.download_url);
+                  nestedList.appendChild(fileEl);
+                }
+                dirFolder.appendChild(nestedList);
+              }catch(e){}
+            })();
+            innerList.appendChild(dirFolder);
+          }
+        }
+      }
+
+      folderEl.appendChild(innerList);
+      return folderEl;
+    }
+
+    function makeFileItem(path, rawUrl){
+      const fileEl = document.createElement('div');
+      fileEl.className = 'file-item';
+      // show only filename for readability; title holds full path
+      const nameOnly = path.split('/').pop();
+      fileEl.textContent = nameOnly;
+      fileEl.dataset.raw = rawUrl;
+      fileEl.dataset.path = path;
+      fileEl.title = path;
+      fileEl.addEventListener('click', () => onFileClick(fileEl));
+      return fileEl;
+    }
+
+    function attachFolderHandlers(){
+      repoFolders.querySelectorAll('.folder-title').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const folder = el.parentElement;
+          folder.classList.toggle('collapsed');
+          folder.classList.toggle('open');
+          const inner = folder.querySelector('.inner-list');
+          if(inner) inner.style.display = folder.classList.contains('collapsed') ? 'none' : 'block';
+        });
+      });
+      repoFolders.querySelectorAll('.subfolder-title').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const sub = el.parentElement;
+          sub.classList.toggle('collapsed');
+          sub.classList.toggle('open');
+          const sublist = sub.querySelector('.sub-list');
+          if(sublist) sublist.style.display = sub.classList.contains('collapsed') ? 'none' : 'block';
+        });
+      });
+    }
+
+    // when a file is clicked: fetch raw + render markdown
+    async function onFileClick(node){
+      document.querySelectorAll('.file-item').forEach(e=>e.classList.remove('active'));
+      node.classList.add('active');
+
+      const raw = node.dataset.raw;
+      const path = node.dataset.path || '';
+      if(!raw) return;
+      mdViewer.innerHTML = '<div class="loader">Loading file...</div>';
+      try{
+        const res = await fetch(raw);
+        if(!res.ok) throw new Error('Failed to fetch file');
+        const text = await res.text();
+        const html = marked.parse(text);
+        mdViewer.innerHTML = `
+          <div class="path-header">
+            <div class="path-text">${path}</div>
+            <div class="path-actions">
+              <button class="action-btn" id="openRaw">Open raw</button>
+              <button class="action-btn" id="copyPath">Copy path</button>
+            </div>
+          </div>
+          <div class="md-content">${html}</div>`;
+        document.getElementById('openRaw').addEventListener('click', ()=> window.open(raw,'_blank'));
+        document.getElementById('copyPath').addEventListener('click', ()=> {
+          navigator.clipboard?.writeText(path).then(()=> {
+            const b = document.getElementById('copyPath');
+            const old = b.textContent;
+            b.textContent = 'Copied';
+            setTimeout(()=> b.textContent = old,1200);
+          }).catch(()=>{ alert('Copy failed'); });
+        });
+        mdViewer.querySelectorAll('a').forEach(a=>a.setAttribute('target','_blank'));
+      }catch(err){
+        mdViewer.innerHTML = `<div class="muted">無法載入檔案：${err.message}</div>`;
+      }
+    }
+
+    // init
+    (async function(){
+      try{
+        await buildTree();
+      }catch(e){
+        repoLoader.textContent = `初始化錯誤: ${e.message}`;
+        repoLoader.style.display='block';
+      }
+    })();
+  </script>
+</body>
+</html>
