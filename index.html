@@ -366,11 +366,31 @@
                 subFolder.appendChild(subTitle);
                 const subList = document.createElement('div');
                 subList.className = 'sub-list';
-                it.files.forEach(f => {
-                  const fileEl = makeFileItem(`${f.path}`, f.raw_url);
+                (it.files || []).forEach(f => {
+                  const fileEl = makeFileItem(f.path, f.raw_url);
                   subList.appendChild(fileEl);
                 });
-                subFolder.appendChild(subList);
+                (it.subfolders || []).forEach(sf => {
+                  const nestedFolder = document.createElement('div');
+                  nestedFolder.className = 'subfolder open';
+
+                  const nestedTitle = document.createElement('div');
+                  nestedTitle.className = 'subfolder-title';
+                  nestedTitle.textContent = sf.subfolder;
+                  nestedFolder.appendChild(nestedTitle);
+
+                  const nestedList = document.createElement('div');
+                  nestedList.className = 'sub-list';
+
+                  (sf.files || []).forEach(f => {
+                    const fileEl = makeFileItem(f.path, f.raw_url);
+                    nestedList.appendChild(fileEl);
+                  });
+
+                  nestedFolder.appendChild(nestedList);
+                  subList.appendChild(nestedFolder);
+                });
+		subFolder.appendChild(subList);
                 innerList.appendChild(subFolder);
               } else if (it.type === 'file') {
                 const fileEl = makeFileItem(it.path, it.raw_url);
