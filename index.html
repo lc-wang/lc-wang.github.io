@@ -359,7 +359,7 @@
             items.forEach(it => {
               if (it.subfolder) {
                 const subFolder = document.createElement('div');
-                subFolder.className = 'subfolder open';
+                subFolder.className = 'subfolder collapsed';
                 const subTitle = document.createElement('div');
                 subTitle.className = 'subfolder-title';
                 subTitle.textContent = it.subfolder;
@@ -372,7 +372,7 @@
                 });
                 (it.subfolders || []).forEach(sf => {
                   const nestedFolder = document.createElement('div');
-                  nestedFolder.className = 'subfolder open';
+                  nestedFolder.className = 'subfolder collapsed';
 
                   const nestedTitle = document.createElement('div');
                   nestedTitle.className = 'subfolder-title';
@@ -397,7 +397,7 @@
                 innerList.appendChild(fileEl);
               } else if (it.type === 'subdir') {
                 const dirFolder = document.createElement('div');
-                dirFolder.className = 'subfolder open';
+                dirFolder.className = 'subfolder collapsed';
                 const dirTitle = document.createElement('div');
                 dirTitle.className = 'subfolder-title';
                 dirTitle.textContent = it.name;
